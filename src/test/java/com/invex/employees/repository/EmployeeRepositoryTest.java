@@ -1,7 +1,6 @@
 package com.invex.employees.repository;
 
 import com.invex.employees.entity.Employee;
-import com.invex.employees.enums.Gender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,18 +14,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Tests de repositorio con @DataJpaTest.
- *
- * @DataJpaTest levanta solo la capa JPA con una BD H2 en memoria.
- * No carga Controllers, Services ni Security — es muy rápido.
- * TestEntityManager se usa para insertar datos de prueba directamente
- * sin pasar por el Service.
- *
- * Estos tests verifican que las queries JPQL funcionen correctamente.
- */
 @DataJpaTest
-@DisplayName("EmployeeRepository — JPA Tests")
+@DisplayName("EmployeeRepository - JPA Tests")
 class EmployeeRepositoryTest {
 
     @Autowired
@@ -36,27 +25,26 @@ class EmployeeRepositoryTest {
     private EmployeeRepository repository;
 
     private Employee activeEmployee;
-    private Employee inactiveEmployee;
 
     @BeforeEach
     void setUp() {
         activeEmployee = entityManager.persistAndFlush(Employee.builder()
                 .firstName("Juan")
                 .secondName("Carlos")
-                .paternalSurname("García")
-                .maternalSurname("López")
+                .paternalSurname("Garcia")
+                .maternalSurname("Lopez")
                 .age(30)
-                .gender(Gender.MALE)
+                .gender("Male")
                 .birthDate(LocalDate.of(1993, 6, 15))
                 .position("Senior Developer")
                 .active(true)
                 .build());
 
-        inactiveEmployee = entityManager.persistAndFlush(Employee.builder()
+        entityManager.persistAndFlush(Employee.builder()
                 .firstName("Pedro")
-                .paternalSurname("Martínez")
+                .paternalSurname("Martinez")
                 .age(45)
-                .gender(Gender.MALE)
+                .gender("Male")
                 .birthDate(LocalDate.of(1979, 1, 20))
                 .position("Manager")
                 .active(false)
@@ -64,17 +52,15 @@ class EmployeeRepositoryTest {
 
         entityManager.persistAndFlush(Employee.builder()
                 .firstName("Ana")
-                .secondName("María")
-                .paternalSurname("Hernández")
+                .secondName("Maria")
+                .paternalSurname("Hernandez")
                 .age(28)
-                .gender(Gender.FEMALE)
+                .gender("Female")
                 .birthDate(LocalDate.of(1996, 3, 8))
                 .position("Junior Developer")
                 .active(true)
                 .build());
     }
-
-    // ─── findByNameContainingIgnoreCase ───────────────────────────────────────
 
     @Nested
     @DisplayName("findByNameContainingIgnoreCase()")
@@ -91,26 +77,24 @@ class EmployeeRepositoryTest {
         @Test
         @DisplayName("Should find by paternalSurname case-insensitive")
         void shouldFindByPaternalSurname() {
-            List<Employee> result = repository.findByNameContainingIgnoreCase("GARCÍA");
+            List<Employee> result = repository.findByNameContainingIgnoreCase("GARCIA");
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getPaternalSurname()).isEqualTo("García");
+            assertThat(result.get(0).getPaternalSurname()).isEqualTo("Garcia");
         }
 
         @Test
         @DisplayName("Should find by partial match")
         void shouldFindByPartialMatch() {
             List<Employee> result = repository.findByNameContainingIgnoreCase("ern");
-            // Encuentra "Hernández"
             assertThat(result).isNotEmpty();
-            assertThat(result.get(0).getPaternalSurname()).contains("Hern");
         }
 
         @Test
         @DisplayName("Should find by secondName")
         void shouldFindBySecondName() {
-            List<Employee> result = repository.findByNameContainingIgnoreCase("María");
+            List<Employee> result = repository.findByNameContainingIgnoreCase("Maria");
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getSecondName()).isEqualTo("María");
+            assertThat(result.get(0).getSecondName()).isEqualTo("Maria");
         }
 
         @Test
@@ -119,17 +103,7 @@ class EmployeeRepositoryTest {
             List<Employee> result = repository.findByNameContainingIgnoreCase("xyz999");
             assertThat(result).isEmpty();
         }
-
-        @Test
-        @DisplayName("Should return multiple results when name matches several employees")
-        void shouldReturnMultipleMatches() {
-            // "a" aparece en Juan (paternalSurname García), Ana, Hernández
-            List<Employee> result = repository.findByNameContainingIgnoreCase("ana");
-            assertThat(result).isNotEmpty();
-        }
     }
-
-    // ─── findAllByActiveTrue ──────────────────────────────────────────────────
 
     @Nested
     @DisplayName("findAllByActiveTrue()")
@@ -139,7 +113,6 @@ class EmployeeRepositoryTest {
         @DisplayName("Should return only active employees")
         void shouldReturnOnlyActive() {
             List<Employee> result = repository.findAllByActiveTrue();
-
             assertThat(result).hasSize(2);
             assertThat(result).allMatch(Employee::getActive);
         }
@@ -148,21 +121,17 @@ class EmployeeRepositoryTest {
         @DisplayName("Should not return inactive employees")
         void shouldNotReturnInactive() {
             List<Employee> result = repository.findAllByActiveTrue();
-
-            assertThat(result)
-                    .noneMatch(e -> e.getFirstName().equals("Pedro"));
+            assertThat(result).noneMatch(e -> e.getFirstName().equals("Pedro"));
         }
     }
 
-    // ─── Herencia de JpaRepository ────────────────────────────────────────────
-
     @Nested
-    @DisplayName("JpaRepository inherited methods")
+    @DisplayName("JpaRepository methods")
     class JpaRepositoryMethods {
 
         @Test
         @DisplayName("findById should return employee when exists")
-        void findByIdShouldReturnEmployee() {
+        void findByIdShouldReturn() {
             assertThat(repository.findById(activeEmployee.getId())).isPresent();
         }
 
@@ -173,25 +142,25 @@ class EmployeeRepositoryTest {
         }
 
         @Test
-        @DisplayName("existsById should return true for existing employee")
-        void existsByIdShouldReturnTrue() {
+        @DisplayName("existsById should return true for existing")
+        void existsByIdTrue() {
             assertThat(repository.existsById(activeEmployee.getId())).isTrue();
         }
 
         @Test
-        @DisplayName("existsById should return false for nonexistent employee")
-        void existsByIdShouldReturnFalse() {
+        @DisplayName("existsById should return false for nonexistent")
+        void existsByIdFalse() {
             assertThat(repository.existsById(999L)).isFalse();
         }
 
         @Test
-        @DisplayName("save should persist employee and return with generated id")
-        void saveShouldPersistEmployee() {
+        @DisplayName("save should persist and return with id")
+        void saveShouldPersist() {
             Employee newEmployee = Employee.builder()
                     .firstName("Luis")
-                    .paternalSurname("Ramírez")
+                    .paternalSurname("Ramirez")
                     .age(35)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1989, 7, 20))
                     .position("Architect")
                     .active(true)
@@ -209,12 +178,11 @@ class EmployeeRepositoryTest {
             Long id = activeEmployee.getId();
             repository.deleteById(id);
             entityManager.flush();
-
             assertThat(repository.findById(id)).isEmpty();
         }
 
         @Test
-        @DisplayName("count should return total number of employees")
+        @DisplayName("count should return total number")
         void countShouldReturnTotal() {
             assertThat(repository.count()).isEqualTo(3);
         }

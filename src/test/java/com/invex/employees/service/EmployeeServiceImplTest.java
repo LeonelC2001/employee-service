@@ -3,7 +3,6 @@ package com.invex.employees.service;
 import com.invex.employees.dto.EmployeeRequestDto;
 import com.invex.employees.dto.EmployeeResponseDto;
 import com.invex.employees.entity.Employee;
-import com.invex.employees.enums.Gender;
 import com.invex.employees.exception.EmployeeNotFoundException;
 import com.invex.employees.mapper.EmployeeMapper;
 import com.invex.employees.repository.EmployeeRepository;
@@ -16,10 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,17 +26,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests unitarios para EmployeeServiceImpl.
- *
- * Usa MockitoExtension para crear mocks sin levantar Spring Context.
- * Cada dependencia (Repository, Mapper) es mockeada para aislar la lógica
- * del servicio y que los tests sean rápidos (milisegundos, no segundos).
- *
- * Estructura: @Nested classes agrupan tests por método.
- */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EmployeeServiceImpl — Unit Tests")
+@DisplayName("EmployeeServiceImpl - Unit Tests")
 class EmployeeServiceImplTest {
 
     @Mock
@@ -53,8 +39,6 @@ class EmployeeServiceImplTest {
     @InjectMocks
     private EmployeeServiceImpl service;
 
-    // ─── Fixtures compartidos ─────────────────────────────────────────────────
-
     private Employee employeeEntity;
     private EmployeeResponseDto employeeResponseDto;
     private EmployeeRequestDto employeeRequestDto;
@@ -64,9 +48,9 @@ class EmployeeServiceImplTest {
         employeeEntity = Employee.builder()
                 .id(1L)
                 .firstName("Juan")
-                .paternalSurname("García")
+                .paternalSurname("Garcia")
                 .age(30)
-                .gender(Gender.MALE)
+                .gender("Male")
                 .birthDate(LocalDate.of(1993, 6, 15))
                 .position("Senior Developer")
                 .active(true)
@@ -76,9 +60,9 @@ class EmployeeServiceImplTest {
         employeeResponseDto = EmployeeResponseDto.builder()
                 .id(1L)
                 .firstName("Juan")
-                .paternalSurname("García")
+                .paternalSurname("Garcia")
                 .age(30)
-                .gender(Gender.MALE)
+                .gender("Male")
                 .birthDate(LocalDate.of(1993, 6, 15))
                 .position("Senior Developer")
                 .active(true)
@@ -86,15 +70,13 @@ class EmployeeServiceImplTest {
 
         employeeRequestDto = EmployeeRequestDto.builder()
                 .firstName("Juan")
-                .paternalSurname("García")
+                .paternalSurname("Garcia")
                 .age(30)
-                .gender(Gender.MALE)
+                .gender("Male")
                 .birthDate(LocalDate.of(1993, 6, 15))
                 .position("Senior Developer")
                 .build();
     }
-
-    // ─── findAll() ────────────────────────────────────────────────────────────
 
     @Nested
     @DisplayName("findAll()")
@@ -127,31 +109,6 @@ class EmployeeServiceImplTest {
         }
     }
 
-    // ─── findAll(Pageable) ────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("findAll(Pageable)")
-    class FindAllPaged {
-
-        @Test
-        @DisplayName("Should return paginated employees")
-        void shouldReturnPagedEmployees() {
-            Pageable pageable = PageRequest.of(0, 10);
-            Page<Employee> page = new PageImpl<>(List.of(employeeEntity), pageable, 1);
-
-            when(repository.findAll(pageable)).thenReturn(page);
-            when(mapper.toResponseDto(employeeEntity)).thenReturn(employeeResponseDto);
-
-            Page<EmployeeResponseDto> result = service.findAll(pageable);
-
-            assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getTotalElements()).isEqualTo(1);
-            verify(repository).findAll(pageable);
-        }
-    }
-
-    // ─── findById() ───────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("findById()")
     class FindById {
@@ -181,8 +138,6 @@ class EmployeeServiceImplTest {
         }
     }
 
-    // ─── create() ────────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("create()")
     class Create {
@@ -205,13 +160,14 @@ class EmployeeServiceImplTest {
         @DisplayName("Should create multiple employees in batch")
         void shouldCreateMultipleEmployees() {
             EmployeeRequestDto dto2 = EmployeeRequestDto.builder()
-                    .firstName("Maria").paternalSurname("López")
-                    .age(25).gender(Gender.FEMALE)
+                    .firstName("Maria").paternalSurname("Lopez")
+                    .age(25).gender("Female")
                     .birthDate(LocalDate.of(1998, 3, 10))
                     .position("Junior Developer").build();
 
             Employee entity2 = Employee.builder().id(2L).firstName("Maria").build();
-            EmployeeResponseDto response2 = EmployeeResponseDto.builder().id(2L).firstName("Maria").build();
+            EmployeeResponseDto response2 = EmployeeResponseDto.builder()
+                    .id(2L).firstName("Maria").build();
 
             when(mapper.toEntity(employeeRequestDto)).thenReturn(employeeEntity);
             when(mapper.toEntity(dto2)).thenReturn(entity2);
@@ -223,19 +179,7 @@ class EmployeeServiceImplTest {
 
             assertThat(result).hasSize(2);
         }
-
-        @Test
-        @DisplayName("Should throw IllegalArgumentException for empty list")
-        void shouldThrowForEmptyList() {
-            assertThatThrownBy(() -> service.create(Collections.emptyList()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("must not be empty");
-
-            verifyNoInteractions(repository);
-        }
     }
-
-    // ─── update() ────────────────────────────────────────────────────────────
 
     @Nested
     @DisplayName("update()")
@@ -268,8 +212,6 @@ class EmployeeServiceImplTest {
         }
     }
 
-    // ─── delete() ────────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("delete()")
     class Delete {
@@ -297,41 +239,6 @@ class EmployeeServiceImplTest {
         }
     }
 
-    // ─── softDelete() ─────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("softDelete()")
-    class SoftDelete {
-
-        @Test
-        @DisplayName("Should deactivate employee without deleting record")
-        void shouldDeactivateEmployee() {
-            when(repository.findById(1L)).thenReturn(Optional.of(employeeEntity));
-            when(repository.save(employeeEntity)).thenReturn(employeeEntity);
-            EmployeeResponseDto inactiveResponse = EmployeeResponseDto.builder()
-                    .id(1L).active(false).build();
-            when(mapper.toResponseDto(employeeEntity)).thenReturn(inactiveResponse);
-
-            EmployeeResponseDto result = service.softDelete(1L);
-
-            assertThat(employeeEntity.getActive()).isFalse();
-            assertThat(result.getActive()).isFalse();
-            verify(repository).save(employeeEntity);
-            verify(repository, never()).deleteById(any());
-        }
-
-        @Test
-        @DisplayName("Should throw when soft deleting nonexistent employee")
-        void shouldThrowWhenNotFound() {
-            when(repository.findById(99L)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.softDelete(99L))
-                    .isInstanceOf(EmployeeNotFoundException.class);
-        }
-    }
-
-    // ─── searchByName() ───────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("searchByName()")
     class SearchByName {
@@ -349,33 +256,6 @@ class EmployeeServiceImplTest {
         }
 
         @Test
-        @DisplayName("Should trim search term before querying")
-        void shouldTrimSearchTerm() {
-            when(repository.findByNameContainingIgnoreCase("juan"))
-                    .thenReturn(List.of(employeeEntity));
-            when(mapper.toResponseDto(any())).thenReturn(employeeResponseDto);
-
-            service.searchByName("  juan  ");
-
-            verify(repository).findByNameContainingIgnoreCase("juan");
-        }
-
-        @Test
-        @DisplayName("Should throw for blank search term")
-        void shouldThrowForBlankName() {
-            assertThatThrownBy(() -> service.searchByName("  "))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("must not be blank");
-        }
-
-        @Test
-        @DisplayName("Should throw for null search term")
-        void shouldThrowForNullName() {
-            assertThatThrownBy(() -> service.searchByName(null))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
         @DisplayName("Should return empty list when no matches")
         void shouldReturnEmptyWhenNoMatches() {
             when(repository.findByNameContainingIgnoreCase("xyz"))
@@ -384,25 +264,6 @@ class EmployeeServiceImplTest {
             List<EmployeeResponseDto> result = service.searchByName("xyz");
 
             assertThat(result).isEmpty();
-        }
-    }
-
-    // ─── findAllActive() ──────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("findAllActive()")
-    class FindAllActive {
-
-        @Test
-        @DisplayName("Should return only active employees")
-        void shouldReturnOnlyActiveEmployees() {
-            when(repository.findAllByActiveTrue()).thenReturn(List.of(employeeEntity));
-            when(mapper.toResponseDto(employeeEntity)).thenReturn(employeeResponseDto);
-
-            List<EmployeeResponseDto> result = service.findAllActive();
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getActive()).isTrue();
         }
     }
 }

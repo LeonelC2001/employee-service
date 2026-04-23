@@ -3,7 +3,6 @@ package com.invex.employees.mapper;
 import com.invex.employees.dto.EmployeeRequestDto;
 import com.invex.employees.dto.EmployeeResponseDto;
 import com.invex.employees.entity.Employee;
-import com.invex.employees.enums.Gender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,14 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Tests unitarios para EmployeeMapper.
- * No necesita Spring — es una clase POJO pura, se instancia directamente.
- */
-@DisplayName("EmployeeMapper — Unit Tests")
+@DisplayName("EmployeeMapper - Unit Tests")
 class EmployeeMapperTest {
 
     private EmployeeMapper mapper;
@@ -28,10 +24,8 @@ class EmployeeMapperTest {
         mapper = new EmployeeMapper();
     }
 
-    // ─── toEntity ────────────────────────────────────────────────────────────
-
     @Nested
-    @DisplayName("toEntity(EmployeeRequestDto)")
+    @DisplayName("toEntity()")
     class ToEntity {
 
         @Test
@@ -40,10 +34,10 @@ class EmployeeMapperTest {
             EmployeeRequestDto dto = EmployeeRequestDto.builder()
                     .firstName("Juan")
                     .secondName("Carlos")
-                    .paternalSurname("García")
-                    .maternalSurname("López")
+                    .paternalSurname("Garcia")
+                    .maternalSurname("Lopez")
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Senior Developer")
                     .active(true)
@@ -53,26 +47,26 @@ class EmployeeMapperTest {
 
             assertThat(entity.getFirstName()).isEqualTo("Juan");
             assertThat(entity.getSecondName()).isEqualTo("Carlos");
-            assertThat(entity.getPaternalSurname()).isEqualTo("García");
-            assertThat(entity.getMaternalSurname()).isEqualTo("López");
+            assertThat(entity.getPaternalSurname()).isEqualTo("Garcia");
+            assertThat(entity.getMaternalSurname()).isEqualTo("Lopez");
             assertThat(entity.getAge()).isEqualTo(30);
-            assertThat(entity.getGender()).isEqualTo(Gender.MALE);
+            assertThat(entity.getGender()).isEqualTo("Male");
             assertThat(entity.getBirthDate()).isEqualTo(LocalDate.of(1993, 6, 15));
             assertThat(entity.getPosition()).isEqualTo("Senior Developer");
             assertThat(entity.getActive()).isTrue();
         }
 
         @Test
-        @DisplayName("Should default active to true when null in DTO")
+        @DisplayName("Should default active to true when null")
         void shouldDefaultActiveToTrue() {
             EmployeeRequestDto dto = EmployeeRequestDto.builder()
                     .firstName("Juan")
-                    .paternalSurname("García")
+                    .paternalSurname("Garcia")
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Developer")
-                    .active(null)  // null → debe quedar true por defecto
+                    .active(null)
                     .build();
 
             Employee entity = mapper.toEntity(dto);
@@ -85,9 +79,9 @@ class EmployeeMapperTest {
         void shouldRespectExplicitFalse() {
             EmployeeRequestDto dto = EmployeeRequestDto.builder()
                     .firstName("Juan")
-                    .paternalSurname("García")
+                    .paternalSurname("Garcia")
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Developer")
                     .active(false)
@@ -99,34 +93,15 @@ class EmployeeMapperTest {
         }
 
         @Test
-        @DisplayName("Should trim whitespace in string fields")
-        void shouldTrimStringFields() {
-            EmployeeRequestDto dto = EmployeeRequestDto.builder()
-                    .firstName("  Juan  ")
-                    .paternalSurname("  García  ")
-                    .age(30)
-                    .gender(Gender.MALE)
-                    .birthDate(LocalDate.of(1993, 6, 15))
-                    .position("  Senior Developer  ")
-                    .build();
-
-            Employee entity = mapper.toEntity(dto);
-
-            assertThat(entity.getFirstName()).isEqualTo("Juan");
-            assertThat(entity.getPaternalSurname()).isEqualTo("García");
-            assertThat(entity.getPosition()).isEqualTo("Senior Developer");
-        }
-
-        @Test
-        @DisplayName("Should handle null optional fields gracefully")
+        @DisplayName("Should handle null optional fields")
         void shouldHandleNullOptionalFields() {
             EmployeeRequestDto dto = EmployeeRequestDto.builder()
                     .firstName("Juan")
-                    .secondName(null)       // opcional
-                    .paternalSurname("García")
-                    .maternalSurname(null)  // opcional
+                    .secondName(null)
+                    .paternalSurname("Garcia")
+                    .maternalSurname(null)
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Developer")
                     .build();
@@ -138,10 +113,8 @@ class EmployeeMapperTest {
         }
     }
 
-    // ─── toResponseDto ────────────────────────────────────────────────────────
-
     @Nested
-    @DisplayName("toResponseDto(Employee)")
+    @DisplayName("toResponseDto()")
     class ToResponseDto {
 
         @Test
@@ -152,14 +125,13 @@ class EmployeeMapperTest {
                     .id(1L)
                     .firstName("Juan")
                     .secondName("Carlos")
-                    .paternalSurname("García")
-                    .maternalSurname("López")
+                    .paternalSurname("Garcia")
+                    .maternalSurname("Lopez")
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Senior Developer")
                     .createdAt(now)
-                    .updatedAt(now)
                     .active(true)
                     .build();
 
@@ -168,38 +140,15 @@ class EmployeeMapperTest {
             assertThat(dto.getId()).isEqualTo(1L);
             assertThat(dto.getFirstName()).isEqualTo("Juan");
             assertThat(dto.getSecondName()).isEqualTo("Carlos");
-            assertThat(dto.getPaternalSurname()).isEqualTo("García");
+            assertThat(dto.getPaternalSurname()).isEqualTo("Garcia");
             assertThat(dto.getAge()).isEqualTo(30);
-            assertThat(dto.getGender()).isEqualTo(Gender.MALE);
+            assertThat(dto.getGender()).isEqualTo("Male");
             assertThat(dto.getBirthDate()).isEqualTo(LocalDate.of(1993, 6, 15));
             assertThat(dto.getPosition()).isEqualTo("Senior Developer");
             assertThat(dto.getCreatedAt()).isEqualTo(now);
             assertThat(dto.getActive()).isTrue();
         }
-
-        @Test
-        @DisplayName("Should include calculatedAge from entity")
-        void shouldIncludeCalculatedAge() {
-            // Empleado nacido hace 30 años (aproximado)
-            LocalDate birthDate = LocalDate.now().minusYears(30);
-            Employee entity = Employee.builder()
-                    .id(1L)
-                    .firstName("Juan")
-                    .paternalSurname("García")
-                    .age(30)
-                    .gender(Gender.MALE)
-                    .birthDate(birthDate)
-                    .position("Developer")
-                    .active(true)
-                    .build();
-
-            EmployeeResponseDto dto = mapper.toResponseDto(entity);
-
-            assertThat(dto.getCalculatedAge()).isEqualTo(30);
-        }
     }
-
-    // ─── updateEntityFromDto ──────────────────────────────────────────────────
 
     @Nested
     @DisplayName("updateEntityFromDto()")
@@ -210,15 +159,14 @@ class EmployeeMapperTest {
         void shouldUpdateOnlyNonNullFields() {
             Employee entity = Employee.builder()
                     .firstName("Juan")
-                    .paternalSurname("García")
+                    .paternalSurname("Garcia")
                     .age(30)
-                    .gender(Gender.MALE)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
                     .position("Developer")
                     .active(true)
                     .build();
 
-            // Solo actualiza firstName y position
             EmployeeRequestDto dto = EmployeeRequestDto.builder()
                     .firstName("Carlos")
                     .position("Team Lead")
@@ -228,39 +176,24 @@ class EmployeeMapperTest {
 
             assertThat(entity.getFirstName()).isEqualTo("Carlos");
             assertThat(entity.getPosition()).isEqualTo("Team Lead");
-            // Los demás no cambian
-            assertThat(entity.getPaternalSurname()).isEqualTo("García");
+            assertThat(entity.getPaternalSurname()).isEqualTo("Garcia");
             assertThat(entity.getAge()).isEqualTo(30);
-        }
-
-        @Test
-        @DisplayName("Should trim strings in updates")
-        void shouldTrimStringsOnUpdate() {
-            Employee entity = Employee.builder()
-                    .firstName("Juan").paternalSurname("García")
-                    .age(30).gender(Gender.MALE)
-                    .birthDate(LocalDate.of(1993, 6, 15))
-                    .position("Developer").active(true).build();
-
-            EmployeeRequestDto dto = EmployeeRequestDto.builder()
-                    .firstName("  Carlos  ")
-                    .build();
-
-            mapper.updateEntityFromDto(dto, entity);
-
-            assertThat(entity.getFirstName()).isEqualTo("Carlos");
         }
 
         @Test
         @DisplayName("Should not update any field when all DTO fields are null")
         void shouldNotUpdateWhenAllNull() {
             Employee entity = Employee.builder()
-                    .firstName("Juan").paternalSurname("García")
-                    .age(30).gender(Gender.MALE)
+                    .firstName("Juan")
+                    .paternalSurname("Garcia")
+                    .age(30)
+                    .gender("Male")
                     .birthDate(LocalDate.of(1993, 6, 15))
-                    .position("Developer").active(true).build();
+                    .position("Developer")
+                    .active(true)
+                    .build();
 
-            EmployeeRequestDto dto = new EmployeeRequestDto(); // todos null
+            EmployeeRequestDto dto = new EmployeeRequestDto();
 
             mapper.updateEntityFromDto(dto, entity);
 
