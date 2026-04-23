@@ -1,5 +1,5 @@
 
-# 🚀 INVEX Employee Service — Infrastructure & DevSecOps
+# INVEX Employee Service — Infrastructure & DevSecOps
 Solución técnica completa para el despliegue del servicio de empleados, utilizando arquitectura en EKS, integración continua con GitHub Actions, provisión con Terraform y contenedores Docker.
 
 ### 🛠️ Requisitos Previos
