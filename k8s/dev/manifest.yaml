@@ -1,0 +1,136 @@
+# ─────────────────────────────────────────────────────────────
+# DEV namespace — H2 in-memory DB, relaxed security, Swagger ON
+# ─────────────────────────────────────────────────────────────
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: employee-dev
+  labels:
+    environment: dev
+    app: employee-service
+
+---
+# ConfigMap — dev overrides
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: employee-service-config
+  namespace: employee-dev
+data:
+  SPRING_PROFILES_ACTIVE: "dev"
+  SERVER_PORT: "8080"
+
+---
+# Secret — dev credentials (plain-text OK for non-production)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: employee-service-secret
+  namespace: employee-dev
+type: Opaque
+stringData:
+  APP_ADMIN_USER: "admin"
+  APP_ADMIN_PASSWORD: "admin123"
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee-service
+  namespace: employee-dev
+  labels:
+    app: employee-service
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee-service
+  template:
+    metadata:
+      labels:
+        app: employee-service
+        environment: dev
+    spec:
+      containers:
+        - name: employee-service
+          # IMAGE is replaced by CI/CD pipeline at deploy time
+          image: ${ECR_REGISTRY}/employee-service:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: employee-service-config
+            - secretRef:
+                name: employee-service-secret
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: log-volume
+              mountPath: /var/log/employee-service
+      volumes:
+        - name: log-volume
+          emptyDir: {}
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: employee-service
+  namespace: employee-dev
+spec:
+  selector:
+    app: employee-service
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# Ingress (AWS ALB via aws-load-balancer-controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: employee-service
+  namespace: employee-dev
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+spec:
+  rules:
+    - host: employee-dev.your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: employee-service
+                port:
+                  number: 80
