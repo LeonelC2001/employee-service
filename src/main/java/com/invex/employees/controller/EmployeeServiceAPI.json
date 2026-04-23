@@ -1,0 +1,282 @@
+{
+  "info": {
+    "name": "Employee Service API",
+    "_postman_id": "7d8a1d2e-9c8f-4d52-b7d4-employee-service",
+    "description": "Collection for Employee Service REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "viewer",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "viewer123",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/actuator/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "actuator",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get all employees",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "viewer",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "viewer123",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get employee by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "viewer",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "viewer123",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search employees by name",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "viewer",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "viewer123",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees/search?name=Juan",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "Juan"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create employees",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "changeme",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"firstName\": \"Juan\",\n    \"secondName\": \"Carlos\",\n    \"paternalSurname\": \"Pérez\",\n    \"maternalSurname\": \"Gómez\",\n    \"age\": 30,\n    \"gender\": \"MALE\",\n    \"birthDate\": \"15-04-1995\",\n    \"position\": \"Developer\",\n    \"active\": true\n  }\n]"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update employee",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "changeme",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Juan\",\n  \"secondName\": \"Carlos\",\n  \"paternalSurname\": \"Pérez\",\n  \"maternalSurname\": \"Gómez\",\n  \"age\": 31,\n  \"gender\": \"MALE\",\n  \"birthDate\": \"15-04-1994\",\n  \"position\": \"Senior Developer\",\n  \"active\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete employee",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "admin",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "changeme",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/v1/employees/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "v1",
+            "employees",
+            "1"
+          ]
+        }
+      }
+    }
+  ]
+}
