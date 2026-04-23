@@ -12,23 +12,12 @@ GitHub Actions CI/CD
         └─ [main branch] ──approval──▶ EKS Namespace: employee-prod (RDS MySQL, 2–8 replicas + HPA)
 ```
 
-**¿Por qué AWS EKS y no OpenShift (ROSA)?**
-
-| | AWS EKS | Red Hat ROSA |
-|---|---|---|
-| Control plane | $0.10/hr (~$73/mo) | $0.171/hr + licencia RHEL |
-| Nodos (2x t3.medium) | ~$61/mo | ~$61/mo + overhead |
-| Gestión | AWS nativa | Red Hat + AWS |
-| **Total estimado** | **~$150/mo** | **~$400–$600/mo** |
-
-EKS es ~60–70% más barato para este caso de uso.
-
 ---
 
 ## Estructura del Repositorio
 
 ```
-employee-service/               ← tu proyecto Spring Boot
+employee-service/              
 docker/
   Dockerfile                    ← multi-stage build (builder + runtime)
   docker-compose.yml            ← para desarrollo local
@@ -129,7 +118,7 @@ chmod +x scripts/bootstrap.sh
 | `AWS_ACCESS_KEY_ID` | IAM user con permisos ECR + EKS |
 | `AWS_SECRET_ACCESS_KEY` | Secret key del IAM user |
 | `EKS_CLUSTER_NAME` | Nombre del cluster (ej: `invex-eks`) |
-| `SONAR_TOKEN` | Token de SonarCloud |
+| `SONAR_TOKEN` | Token de SonarCloud | (Pendiente de implementar)
 
 ### Configurar el Environment de producción (aprobación manual)
 
@@ -168,12 +157,6 @@ kubectl rollout undo deployment/employee-service -n employee-prod
 kubectl rollout history deployment/employee-service -n employee-prod
 ```
 
-### Escalar manualmente (emergencia)
-
-```bash
-kubectl scale deployment/employee-service --replicas=4 -n employee-prod
-```
-
 ---
 
 ## 5. Variables de Entorno por Ambiente
@@ -207,18 +190,3 @@ Antes de usar en producción, actualiza estos valores:
 - `k8s/prod/manifest.yaml` → `wafv2-acl-arn: arn:aws:wafv2:...` (opcional)
 - `scripts/main.tf` → `bucket = "invex-terraform-state"` (nombre único)
 
----
-
-## Costo Estimado Mensual (us-east-1)
-
-| Recurso | Costo |
-|---|---|
-| EKS Control Plane | ~$73 |
-| 2x EC2 t3.medium (nodos) | ~$61 |
-| RDS MySQL db.t3.micro | ~$15 |
-| ECR (almacenamiento) | ~$1 |
-| ALB (Load Balancer) | ~$18 |
-| NAT Gateway | ~$32 |
-| **Total** | **~$200/mo** |
-
-> Para reducir costos en dev: usa `eksctl` con Fargate spot instances o un solo nodo t3.small compartido.
