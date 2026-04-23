@@ -1,0 +1,74 @@
+version: "3.9"
+
+# ─── Local Development Environment ───────────────────────────────────────────
+# Runs the app with H2 in-memory DB (same as dev profile).
+# Usage:
+#   docker compose up --build
+#   docker compose down -v
+
+services:
+  employee-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: runtime
+    image: employee-service:local
+    container_name: employee-service-dev
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    volumes:
+      - ./logs:/var/log/employee-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    networks:
+      - employee-net
+
+# ─── Docker Compose with MySQL (optional local integration test) ──────────────
+# Uncomment the block below and comment the service above to test against MySQL.
+#
+#  mysql:
+#    image: mysql:8.0
+#    container_name: employee-mysql
+#    environment:
+#      MYSQL_ROOT_PASSWORD: rootpass
+#      MYSQL_DATABASE: employeedb
+#      MYSQL_USER: employee
+#      MYSQL_PASSWORD: employee123
+#    ports:
+#      - "3306:3306"
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    networks:
+#      - employee-net
+#    healthcheck:
+#      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+#  employee-service:
+#    ...same as above but add:
+#    environment:
+#      SPRING_PROFILES_ACTIVE: prod
+#      DB_URL: jdbc:mysql://mysql:3306/employeedb?useSSL=false&allowPublicKeyRetrieval=true
+#      DB_USER: employee
+#      DB_PASSWORD: employee123
+#      APP_ADMIN_USER: admin
+#      APP_ADMIN_PASSWORD: admin123
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+
+networks:
+  employee-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
