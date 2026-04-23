@@ -1,80 +1,35 @@
-# employee-service — Infrastructure & DevSecOps Guide
 
-## Arquitectura General
+# 🚀 INVEX Employee Service — Infrastructure & DevSecOps
+Solución técnica completa para el despliegue del servicio de empleados, utilizando arquitectura en EKS, integración continua con GitHub Actions, provisión con Terraform y contenedores Docker.
 
-```
-GitHub Actions CI/CD
-        │
-        ├─ build → test → sonar → docker build → push ECR
-        │
-        ├─ [develop branch] ──auto──▶ EKS Namespace: employee-dev (H2, 1 replica)
-        │
-        └─ [main branch] ──approval──▶ EKS Namespace: employee-prod (RDS MySQL, 2–8 replicas + HPA)
-```
+### 🛠️ Requisitos Previos
+* **Docker & Docker Compose**
+* **AWS CLI** configurado (`aws configure`)
+* **Terraform** (>= 1.5)
+* **Kubectl** y **Helm**
+* Cuenta de repositorio en **GitHub**
 
 ---
 
-## Estructura del Repositorio
+### 🐳 1. Desarrollo Local (Docker Compose)
+Para levantar el proyecto en tu máquina con base de datos H2 in-memory (perfil `dev`):
 
-```
-employee-service/              
-docker/
-  Dockerfile                    ← multi-stage build (builder + runtime)
-  docker-compose.yml            ← para desarrollo local
-k8s/
-  dev/
-    manifest.yaml               ← Namespace, ConfigMap, Secret, Deployment, Service, Ingress
-  prod/
-    manifest.yaml               ← igual + HPA, PDB, topologySpread, HTTPS, WAF
-scripts/
-  main.tf                       ← Terraform: VPC, EKS, RDS MySQL, ECR, Secrets Manager
-  bootstrap.sh                  ← setup one-time del cluster
-.github/
-  workflows/
-    ci-cd.yml                   ← Pipeline completo CI/CD
-```
-
----
-
-## Flujo Git Flow
-
-```
-feature/* ──▶ develop ──▶ release/* ──▶ main
-                │                          │
-          deploy DEV (auto)         deploy PROD (manual approval)
-```
-
----
-
-## 1. Desarrollo Local (Docker Compose)
-
+**Preparar y levantar contenedores:**
 ```bash
-# Copiar el Dockerfile y docker-compose.yml a la raíz del proyecto
+# Copiar las configuraciones a la raíz del proyecto
 cp docker/Dockerfile .
 cp docker/docker-compose.yml .
 
-# Levantar localmente (H2 in-memory, perfil dev)
+# Construir la imagen localmente y levantar el contenedor
 docker compose up --build
-
-# Acceder a:
-#   API:     http://localhost:8080/employees
-#   Swagger: http://localhost:8080/swagger-ui.html
-#   H2:      http://localhost:8080/h2-console
-#   Health:  http://localhost:8080/actuator/health
 ```
 
 ---
 
-## 2. Infraestructura en AWS (Terraform)
+### ☁️ 2. Infraestructura en AWS (Terraform)
+Despliega todos los recursos necesarios (VPC, EKS, RDS MySQL, ECR, Secrets Manager) con Terraform.
 
-### Pre-requisitos
-- AWS CLI configurado (`aws configure`)
-- Terraform >= 1.5
-- kubectl
-- helm
-
-### Crear el bucket S3 para el estado de Terraform
-
+**1. Crear el bucket S3 para el estado (Terraform State)**
 ```bash
 aws s3 mb s3://invex-terraform-state --region us-east-1
 aws s3api put-bucket-versioning \
@@ -82,12 +37,11 @@ aws s3api put-bucket-versioning \
   --versioning-configuration Status=Enabled
 ```
 
-### Aplicar la infraestructura
-
+**2. Aplicar la infraestructura**
 ```bash
 cd scripts/
 
-# Crear archivo de variables
+# Crear archivo de variables con tus datos
 cat > terraform.tfvars <<EOF
 aws_region          = "us-east-1"
 cluster_name        = "invex-eks"
@@ -95,13 +49,12 @@ db_password         = "TuPasswordSeguro123!"
 app_admin_password  = "AdminPassword456!"
 EOF
 
+# Inicializar y aplicar
 terraform init
-terraform plan  -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```
 
-### Bootstrap del cluster (una sola vez)
-
+**3. Bootstrap del Cluster (Ejecutar solo una vez)**
 ```bash
 chmod +x scripts/bootstrap.sh
 ./scripts/bootstrap.sh invex-eks us-east-1
@@ -109,49 +62,38 @@ chmod +x scripts/bootstrap.sh
 
 ---
 
-## 3. Pipeline CI/CD (GitHub Actions)
+### ⚙️ 3. Pipeline CI/CD (GitHub Actions)
+El proyecto utiliza un flujo Git Flow automatizado:
+* `develop`: Deploy automático a DEV (Namespace: `employee-dev`, H2, 1 replica).
+* `main`: Deploy a PROD (Namespace: `employee-prod`, RDS, 2-8 replicas + HPA) requiere aprobación.
 
-### Secrets requeridos en GitHub → Settings → Secrets
-
-| Secret | Descripción |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | IAM user con permisos ECR + EKS |
-| `AWS_SECRET_ACCESS_KEY` | Secret key del IAM user |
-| `EKS_CLUSTER_NAME` | Nombre del cluster (ej: `invex-eks`) |
-| `SONAR_TOKEN` | Token de SonarCloud | (Pendiente de implementar)
-
-### Configurar el Environment de producción (aprobación manual)
-
-1. GitHub → Settings → Environments → New environment → `production`
-2. Activar **Required reviewers** y agregar tus aprobadores
-3. El pipeline se pausará antes del deploy a PROD hasta que alguien apruebe
-
-### Flujo del pipeline
-
-```
-push a develop → test → sonar → docker build → push ECR → deploy DEV (auto)
-push a main    → test → sonar → docker build → push ECR → [APROBACIÓN] → deploy PROD
-```
+**Configuración en GitHub:**
+1. Ve a **Settings → Secrets and variables → Actions** y agrega:
+    * `AWS_ACCESS_KEY_ID` (Permisos ECR + EKS)
+    * `AWS_SECRET_ACCESS_KEY`
+    * `EKS_CLUSTER_NAME` (Ej: `invex-eks`)
+    * `SONAR_TOKEN`
+2. Ve a **Settings → Environments**, crea uno nuevo llamado `production`, activa la opción **Required reviewers** y asigna a los aprobadores.
 
 ---
 
-## 4. Kubernetes
+### ☸️ 4. Kubernetes (Monitoreo y Despliegue)
+Verifica el estado del cluster directamente a través de kubectl.
 
-### Ver estado de los ambientes
-
+**Monitoreo en Desarrollo (DEV)**
 ```bash
-# DEV
 kubectl get all -n employee-dev
 kubectl logs -l app=employee-service -n employee-dev -f
+```
 
-# PROD
+**Monitoreo en Producción (PROD)**
+```bash
 kubectl get all -n employee-prod
 kubectl get hpa -n employee-prod
 kubectl top pods -n employee-prod
 ```
 
-### Rollback manual
-
+**Rollback de Emergencia**
 ```bash
 kubectl rollout undo deployment/employee-service -n employee-prod
 kubectl rollout history deployment/employee-service -n employee-prod
@@ -159,34 +101,26 @@ kubectl rollout history deployment/employee-service -n employee-prod
 
 ---
 
-## 5. Variables de Entorno por Ambiente
+### 📖 5. Documentación y Accesos Locales
+Una vez levantado tu ambiente de desarrollo (Paso 1), puedes acceder a las siguientes herramientas:
 
-### DEV
-| Variable | Valor |
-|---|---|
-| `SPRING_PROFILES_ACTIVE` | `dev` |
-| `APP_ADMIN_USER` | `admin` |
-| `APP_ADMIN_PASSWORD` | `admin123` |
+**Credenciales por defecto (DEV):**
+* **Usuario:** `admin`
+* **Password:** `admin123`
 
-### PROD (inyectadas desde AWS Secrets Manager)
-| Variable | Fuente |
-|---|---|
-| `SPRING_PROFILES_ACTIVE` | `prod` |
-| `DB_URL` | `employee-service/prod/db-url` |
-| `DB_USER` | `employee-service/prod/db-user` |
-| `DB_PASSWORD` | `employee-service/prod/db-password` |
-| `APP_ADMIN_USER` | `employee-service/prod/app-user` |
-| `APP_ADMIN_PASSWORD` | `employee-service/prod/app-password` |
+**Enlaces:**
+* **API Base:** http://localhost:8080/employees
+* **Swagger UI:** http://localhost:8080/swagger-ui.html
+* **Consola H2:** http://localhost:8080/h2-console
+* **Health Check:** http://localhost:8080/actuator/health
 
 ---
 
-## 6. Personalización Requerida
+### 🔐 6. Personalización para Producción
+Antes de promover a un entorno real, asegúrate de actualizar estos valores en tus manifiestos y scripts:
 
-Antes de usar en producción, actualiza estos valores:
-
-- `k8s/dev/manifest.yaml` → `host: employee-dev.your-domain.com`
-- `k8s/prod/manifest.yaml` → `host: employee.your-domain.com`
-- `k8s/prod/manifest.yaml` → `certificate-arn: arn:aws:acm:...`
-- `k8s/prod/manifest.yaml` → `wafv2-acl-arn: arn:aws:wafv2:...` (opcional)
-- `scripts/main.tf` → `bucket = "invex-terraform-state"` (nombre único)
-
+* `k8s/dev/manifest.yaml` → Modificar el Ingress host (ej: `employee-dev.your-domain.com`)
+* `k8s/prod/manifest.yaml` → Modificar el Ingress host (ej: `employee.your-domain.com`)
+* `k8s/prod/manifest.yaml` → Actualizar el `certificate-arn` y `wafv2-acl-arn` con los datos de AWS.
+* `scripts/main.tf` → Cambiar el `bucket = "invex-terraform-state"` por un nombre globalmente único.
+* **Seguridad:** Las variables en producción (DB URL, usuarios, passwords) son inyectadas de forma segura y automática desde AWS Secrets Manager al namespace de K8s.
