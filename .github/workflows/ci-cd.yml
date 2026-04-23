@@ -18,9 +18,9 @@ env:
   JAVA_VERSION: "17"
 
 jobs:
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   # Job 1 — Unit Tests + Coverage
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   test:
     name: Unit Tests & JaCoCo
     runs-on: ubuntu-latest
@@ -46,9 +46,9 @@ jobs:
           name: jacoco-report
           path: target/site/jacoco/
 
-  # ─────────────────────────────────────────────
-  # Job 2 — SonarCloud Analysis
-  # ─────────────────────────────────────────────
+  # -----------------------------------
+  # Job 3 - Docker Build and Push to ECR
+  # -----------------------------------
 sonar:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
@@ -79,9 +79,9 @@ sonar:
             -Dsonar.host.url=https://sonarcloud.io \
             -B
 
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   # Job 3 — Docker Build & Push to ECR
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   build-and-push:
     name: Build Docker Image & Push to ECR
     runs-on: ubuntu-latest
@@ -137,9 +137,9 @@ sonar:
           exit-code: "1"          # Fail CI if CRITICAL CVEs found
           severity: CRITICAL,HIGH
 
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   # Job 4 — Deploy to DEV (auto on develop branch)
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   deploy-dev:
     name: Deploy → DEV
     runs-on: ubuntu-latest
@@ -180,9 +180,9 @@ sonar:
           kubectl rollout status deployment/employee-service \
             -n employee-dev --timeout=180s
 
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   # Job 5 — Deploy to PROD (manual approval on main)
-  # ─────────────────────────────────────────────
+  # -----------------------------------
   deploy-prod:
     name: Deploy → PROD
     runs-on: ubuntu-latest
